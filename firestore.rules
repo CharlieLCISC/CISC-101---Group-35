@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function uidUnchanged() {
+      return !('uid' in request.resource.data) ||
+        request.resource.data.uid == request.auth.uid;
+    }
+
+    function uidNotModified() {
+      return !('uid' in request.resource.data) ||
+        request.resource.data.uid == resource.data.uid;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "charliemchughlilly@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUserProfile(data) {
+      return hasOnlyAllowedFields(['uid', 'stylePreference', 'gender', 'bodyType', 'updatedAt']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             (!('stylePreference' in data) || (data.stylePreference is string && data.stylePreference.size() < 100)) &&
+             (!('gender' in data) || (data.gender is string && data.gender.size() < 50)) &&
+             (!('bodyType' in data) || (data.bodyType is string && data.bodyType.size() < 100));
+    }
+
+    function isValidWardrobeItem(data) {
+      return hasRequiredFields(['uid', 'imageUrl']) &&
+             hasOnlyAllowedFields(['uid', 'imageUrl', 'description', 'category', 'createdAt']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.imageUrl is string && data.imageUrl.size() < 1000000 &&
+             (!('description' in data) || (data.description is string && data.description.size() < 500)) &&
+             (!('category' in data) || (data.category is string && data.category.size() < 100));
+    }
+
+    function isValidFavoriteOutfit(data) {
+      return hasRequiredFields(['uid', 'name', 'clothing', 'accessories', 'shoes', 'explanation']) &&
+             hasOnlyAllowedFields(['uid', 'name', 'clothing', 'accessories', 'shoes', 'explanation', 'createdAt']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.clothing is string && data.clothing.size() < 1000 &&
+             data.accessories is string && data.accessories.size() < 1000 &&
+             data.shoes is string && data.shoes.size() < 1000 &&
+             data.explanation is string && data.explanation.size() < 2000;
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUserProfile(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserProfile(request.resource.data) && uidNotModified();
+    }
+
+    match /wardrobe/{itemId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid && isValidWardrobeItem(request.resource.data);
+      allow update: if isDocOwner() && isValidWardrobeItem(request.resource.data) && uidNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /favorites/{favoriteId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid && isValidFavoriteOutfit(request.resource.data);
+      allow update: if isDocOwner() && isValidFavoriteOutfit(request.resource.data) && uidNotModified();
+      allow delete: if isDocOwner();
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Style Me",
+  "description": "An AI-powered virtual stylist that helps you build complete outfits from a single clothing item, considering activity, weather, and style preferences.",
+  "requestFramePermissions": ["camera", "geolocation"]
+}

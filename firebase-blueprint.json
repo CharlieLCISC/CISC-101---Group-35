@@ -1,0 +1,59 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user's style preferences and body type.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The user's unique ID." },
+        "stylePreference": { "type": "string", "description": "The user's preferred style (e.g., minimalist, grunge)." },
+        "gender": { "type": "string", "description": "The user's gender preference." },
+        "bodyType": { "type": "string", "description": "The user's body type or size." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "The last time the profile was updated." }
+      },
+      "required": ["uid"]
+    },
+    "WardrobeItem": {
+      "title": "Wardrobe Item",
+      "description": "An item of clothing in the user's wardrobe.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The owner's unique ID." },
+        "imageUrl": { "type": "string", "description": "The URL of the item's image." },
+        "description": { "type": "string", "description": "A description of the item." },
+        "category": { "type": "string", "description": "The category of the item (e.g., top, bottom, shoes)." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the item was added." }
+      },
+      "required": ["uid", "imageUrl"]
+    },
+    "FavoriteOutfit": {
+      "title": "Favorite Outfit",
+      "description": "An outfit favorited by the user.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The owner's unique ID." },
+        "name": { "type": "string", "description": "The name of the outfit." },
+        "clothing": { "type": "string", "description": "A description of the clothing items." },
+        "accessories": { "type": "string", "description": "A description of the accessories." },
+        "shoes": { "type": "string", "description": "A description of the shoes." },
+        "explanation": { "type": "string", "description": "Why the outfit works." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the outfit was favorited." }
+      },
+      "required": ["uid", "name", "clothing", "accessories", "shoes", "explanation"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document."
+    },
+    "/wardrobe/{itemId}": {
+      "schema": "WardrobeItem",
+      "description": "Individual wardrobe items."
+    },
+    "/favorites/{favoriteId}": {
+      "schema": "FavoriteOutfit",
+      "description": "User's favorited outfits."
+    }
+  }
+}
